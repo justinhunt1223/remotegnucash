@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html>
+<body>
+    <div id="page-content">
+
+        <form class="ui form" id="fmSettings">
+            <div class="required field popup" data-content="Enter 'demo' to test the app on a publicly available database.">
+                <label>Server</label>
+                <input type="text" placeholder="https://finance.example.com or demo for demo" name="server" value="demo">
+            </div>
+            <div class="field popup" data-content="Enter if not specified in the script.">
+                <label>Username</label>
+                <input type="text" placeholder="picard" name="username">
+            </div>
+            <div class="field popup" data-content="Enter if not specified in the script.">
+                <label>Password</label>
+                <input type="password" placeholder="jean-luc" name="password">
+            </div>
+            <div class="field popup" data-content="Enter if not specified in the script.">
+                <label>Database</label>
+                <input type="text" placeholder="gnucash" name="database">
+            </div>
+            <div class="field popup" data-content="Specify the MySQL server if other than localhost/127.0.0.1.">
+                <label>MySQL Server</label>
+                <input type="text" placeholder="127.0.0.1" name="mysql_server">
+            </div>
+            <div class="ui error message"></div>
+            <div class="ui basic center aligned segment">
+                <button class="positive ui button">Check Settings</button>
+            </div>
+        </form>
+
+    </div>
+</body>
+</html>

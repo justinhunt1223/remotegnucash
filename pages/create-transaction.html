@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html>
+<body>
+    <div id="page-content">
+
+        <form class="ui form" id="fmCreateTransaction">
+            <div class="fields">
+                <div class="required field" style="width: 50%;">
+                    <label>From</label>
+                    <div class="ui icon input">
+                        <input type="text" placeholder="From" name="from">
+                        <i class="server icon"></i>
+                    </div>
+                </div>
+                <div class="required field" style="width: 50%;">
+                    <label>To</label>
+                    <div class="ui icon input">
+                        <input type="text" placeholder="To" name="to">
+                        <i class="server icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="required field">
+                <label>Description</label>
+                <div class="ui search" id="descriptionSearch">
+                    <div class="ui icon input">
+                        <input class="prompt" type="text" placeholder="Description" name="description">
+                        <i class="search icon"></i>
+                    </div>
+                    <div class="results"></div>
+                </div>
+            </div>
+            <div class="fields">
+                <div class="required field" style="width: 50%;">
+                    <label>Amount</label>
+                    <input type="number" name="amount_hidden" style="width: 1px; position: absolute; z-index: -1;" />
+                    <div class="ui input">
+                        <input type="text" placeholder="Amount" name="amount">
+                    </div>
+                </div>
+                <div class="field" style="width: 50%;">
+                    <label>Date</label>
+                    <div class="ui icon input">
+                        <input type="text" placeholder="Date" name="date">
+                        <i class="calendar icon"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label>Memo</label>
+                <input type="text" placeholder="Memo" name="memo">
+            </div>
+            <div class="ui error message"></div>
+            <div class="ui basic center aligned segment">
+                <button class="positive ui button">Record</button>
+                <button class="ui clear button">Reset</button>
+            </div>
+        </form>
+
+    </div>
+</body>
+</html>

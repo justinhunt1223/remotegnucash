@@ -1,0 +1,25 @@
+﻿
+#loader {
+    background-color: RGBA(128, 128, 128, 0.80);
+    display: block;
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    z-index: 100;
+}
+
+#loader-message {
+    display: block;
+    position: fixed;
+    top: 50%;
+    width: 100%;
+    font-weight: 900;
+    text-align: center;
+    z-index: 101;
+}
+
+.red {
+    color: red !important;
+}

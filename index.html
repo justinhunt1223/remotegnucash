@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'" />
+    <title>GNUCash Remote MySQL</title>
+
+    <link href="css/index.css" rel="stylesheet" />
+    <script src="cordova.js"></script>
+    <script src="scripts/platformOverrides.js"></script>
+    <script src="scripts/jquery-2.2.0.js"></script>
+    <script src="scripts/fastclick.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="semantic-ui/dist/semantic.min.css">
+    <script src="semantic-ui/dist/semantic.min.js"></script>
+
+    <script src="scripts/objects.js"></script>
+    <script src="scripts/objects/storage.js"></script>
+    <script src="scripts/objects/database.js"></script>
+    <script src="scripts/objects/main-menu.js"></script>
+
+    <script src="scripts/main.js"></script>
+    <script src="scripts/modals.js"></script>
+
+    <script src="scripts/pages/settings.js"></script>
+    <script src="scripts/pages/create-transaction.js"></script>
+    <script src="scripts/pages/view-account.js"></script>
+    <script src="scripts/pages/help.js"></script>
+    <script src="scripts/pages/overview.js"></script>
+</head>
+<body>
+    <div class="ui left vertical inverted sidebar labeled icon menu" id="main-menu">
+        <a class="item" name="overview" data-title="Overview" data-ajax="overview" data-load-function="pgOverview.load">
+            <i class="dashboard icon"></i>
+            Overview
+        </a>
+        <a class="item" name="create-transaction" data-title="Create Transaction" data-ajax="create-transaction" data-load-function="pgCreateTransaction.load">
+            <i class="payment icon"></i>
+            Create<br />Transaction
+        </a>
+        <a class="item" name="view-account" data-title="View Account" data-ajax="view-account" data-load-function="pgViewAccount.load">
+            <i class="browser icon"></i>
+            View<br />Account
+        </a>
+        <a class="item" name="settings" data-title="Settings" data-ajax="settings" data-load-function="pgSettings.load">
+            <i class="settings icon"></i>
+            Settings
+        </a>
+        <a class="item" name="help" data-title="Help" data-ajax="help" data-load-function="pgHelp.load">
+            <i class="help icon"></i>
+            Help
+        </a>
+        <a class="item" name="exit" data-title="Exit" data-ajax="" data-load-function="navigator.app.exitApp">
+            <i class="sign out icon"></i>
+            Exit
+        </a>
+    </div>
+    <div class="pusher">
+        <div class="ui clearing segment">
+            <div class="ui center floated header">
+                <div style="display: block; float: left; margin-right: 10px;" id="btnMainMenu"><i class="sidebar icon"></i></div>
+                <div style="display: block; float: left;" id="page-title"></div>
+            </div>
+        </div>
+        <div class="ui basic segment" id="page-content">
+        </div>
+        <div id="loader" data-count="0">
+            <p id="loader-message"></p>
+        </div>
+    </div>
+
+</body>
+</html>
