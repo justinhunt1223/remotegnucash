@@ -480,10 +480,6 @@ class GnuCash {
             $q->execute($aParameters);
             $q->setFetchMode(PDO::FETCH_ASSOC);
             $aReturn = array();
-            $aError = $this->con->errorInfo();
-            if ($aError[2]) {
-                $this->aError = $aError;
-            }
             while ($aRow = $q->fetch()) {
                 if ($bReturnFirst) {
                     return $aRow;
@@ -617,18 +613,21 @@ class GnuCash {
         $this->runQuery("INSERT INTO `transactions` (`guid`, `currency_guid`, `num`, `post_date`, `enter_date`, `description`) VALUES (:guid, :currency_guid, :num, :post_date, :enter_date, :description);",
                         array(':guid' => $sTransactionGUID, ':currency_guid' => $sCurrencyGUID, ':num' => '',
                               ':post_date' => $sDate, ':enter_date' => $sEnterDate, ':description' => $sName));
+        $sTransactionMessage = $this->eException->getMessage();
         $aTransaction = $this->getTransaction($sTransactionGUID);
-        $this->runQuery("INSERT INTO `splits` (`guid`, `tx_guid`, `account_guid`, `memo`, `reconcile_state`, `reconcile_date`, `value_num`, `value_denom`, `quantity_num`, `quantity_denom`) VALUES (:guid, :tx_guid, :account_guid, :memo, :reconcile_state, :reconcile_date, :value_num, :value_denom, :quantity_num, :quantity_denom);",
+        $this->runQuery("INSERT INTO `splits` (`guid`, `tx_guid`, `account_guid`, `memo`, `action`, `reconcile_state`, `reconcile_date`, `value_num`, `value_denom`, `quantity_num`, `quantity_denom`) VALUES (:guid, :tx_guid, :account_guid, :memo, :action, :reconcile_state, :reconcile_date, :value_num, :value_denom, :quantity_num, :quantity_denom);",
                         array(':guid' => $sSplitDebitGUID, ':tx_guid' => $sTransactionGUID, ':account_guid' => $sDebitGUID,
-                              ':memo' => $sMemo, ':reconcile_state' => 'n', ':reconcile_date' => '',
+                              ':memo' => $sMemo, ':reconcile_state' => 'n', ':reconcile_date' => null, ':action' => '',
                               ':value_num' => intval($fAmount * 100), ':value_denom' => 100,
                               ':quantity_num' => intval($fAmount * 100), ':quantity_denom' => 100));
+        $sDebitMessage = $this->eException->getMessage();
         $aSplitDebit = $this->getSplit($sSplitDebitGUID);
-        $this->runQuery("INSERT INTO `splits` (`guid`, `tx_guid`, `account_guid`, `memo`, `reconcile_state`, `reconcile_date`, `value_num`, `value_denom`, `quantity_num`, `quantity_denom`) VALUES (:guid, :tx_guid, :account_guid, :memo, :reconcile_state, :reconcile_date, :value_num, :value_denom, :quantity_num, :quantity_denom);",
+        $this->runQuery("INSERT INTO `splits` (`guid`, `tx_guid`, `account_guid`, `memo`, `action`, `reconcile_state`, `reconcile_date`, `value_num`, `value_denom`, `quantity_num`, `quantity_denom`) VALUES (:guid, :tx_guid, :account_guid, :memo, :action, :reconcile_state, :reconcile_date, :value_num, :value_denom, :quantity_num, :quantity_denom);",
                         array(':guid' => $sSplitCreditGUID, ':tx_guid' => $sTransactionGUID, ':account_guid' => $sCreditGUID,
-                              ':memo' => '', ':reconcile_state' => 'n', ':reconcile_date' => '',
+                              ':memo' => '', ':reconcile_state' => 'n', ':reconcile_date' => null, ':action' => '',
                               ':value_num' => -1 * intval($fAmount * 100), ':value_denom' => 100,
                               ':quantity_num' => -1 * intval($fAmount * 100), ':quantity_denom' => 100));
+        $sCreditMessage = $this->eException->getMessage();
         $aSplitCredit = $this->getSplit($sSplitCreditGUID);
         
         if ($aTransaction and $aSplitDebit and $aSplitCredit) {
@@ -639,19 +638,13 @@ class GnuCash {
         if (!$aTransaction or !$aSplitDebit or !$aSplitCredit) {
             $sError = 'Error:' . ($this->getErrorMessage() ? ' ' . $this->getErrorMessage() . '.' : '');
             if (!$aTransaction) {
-                $sError .= ' Failed to create transaction record.';
+                $sError .= ' Failed to create transaction record: <b>' . $sTransactionMessage . '</b>';
             }
             if (!$aSplitDebit) {
-                $sError .= ' Failed to create debit split.';
-                foreach([$sSplitDebitGUID, $sTransactionGUID, $sDebitGUID, intval($fAmount * 100)] as $sParameter) {
-                    $sError .= '<br />&nbsp;&nbsp;&nbsp;' . $sParameter;
-                }
+                $sError .= ' Failed to create debit split: <b>' . $sDebitMessage . '</b>';
             }
             if (!$aSplitCredit) {
-                $sError .= ' Failed to create credit split.';
-                foreach([$sSplitCreditGUID, $sTransactionGUID, $sCreditGUID, intval($fAmount * 100)] as $sParameter) {
-                    $sError .= '<br />&nbsp;&nbsp;&nbsp;' . $sParameter;
-                }
+                $sError .= ' Failed to create credit split: <b>' . $sCreditMessage . '</b>';
             }
             return $sError;
         }
@@ -801,3 +794,4 @@ class GnuCash {
 new Index();
 
 ?>
+
