@@ -13,7 +13,7 @@ class Index {
     private $sMySQLServer = '';
     // ***
     
-    public $sLastVersion = '1.5.0';
+    public $sLastVersion = '1.7.0';
     public $sVersion = '2.0.0';
     
     public $cGnuCash;
