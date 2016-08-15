@@ -106,6 +106,7 @@ class Index {
     }
     
     private function appGetDateTimeSelect() {
+        // TODO: Remove after 1.5.0 expires.
         $this->aReturn['return'] = 1;
         
         $aMonths = array('', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
