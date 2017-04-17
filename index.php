@@ -1,20 +1,19 @@
 <?php
 
+header('Content-Type: text/plain; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST');
 
 class Index {
     
     // *** User variables ***
-    // These must be specified in the app or here.
     private $sUsername = '';
     private $sPassword = '';
     private $sDatabase = '';
-    private $sMySQLServer = '';
+    private $sDatabaseServer = '';
     // ***
     
-    public $sLastVersion = '1.7.0';
-    public $sVersion = '2.0.0';
+    public $sVersion = '2.1.0';
     
     public $cGnuCash;
     public $aReturn = array('return' => 0, 'message' => '', 'error_code' => 0);
@@ -23,16 +22,19 @@ class Index {
     public $aAccountTypes = array('INCOME', 'EXPENSE', 'BANK', 'ASSET', 'EQUITY', 'CREDIT', 'LIABILITY', 'RECEIVABLE', 'CASH');
     
     public function __construct() {
+        if (!isset($_POST['data'])) {
+            $this->done();
+        }
         $sData = base64_decode($_POST['data']);
         $this->aData = json_decode($sData, true);
         
-        if (isset($this->aData['test_connection'])) {
+        if (isset($this->aData['test_connection']) and $this->aData) {
             $this->aReturn['return'] = 1;
             $this->aReturn['hardcoded_credentials'] = (($this->sUsername and $this->sPassword) ? 1 : 0);
             $this->aReturn['username'] = $this->sUsername;
             $this->aReturn['password'] = $this->sPassword;
-            $this->aReturn['mysql_server'] = $this->sMySQLServer;
-            $this->aReturn['database'] = $this->aDatabase;
+            $this->aReturn['database_server'] = $this->sDatabaseServer;
+            $this->aReturn['database'] = $this->sDatabase;
             $this->done();
         }
         
@@ -45,25 +47,26 @@ class Index {
         $sDbName = $this->aData['login']['database'];
         if (!$sDbName) { $sDbName = $this->sDatabase; }
         
-        $sMySQLServer = $this->aData['login']['mysql_server'];
-        if (!$sMySQLServer) {
-            if ($this->sMySQLServer) {
-                $sMySQLServer = $this->sMySQLServer;
+        $sDatabaseServer = $this->aData['login']['database_server'];
+        if (!$sDatabaseServer) {
+            if (!$this->sDatabaseServer) {
+                $sDatabaseServer = $this->sDatabaseServer;
             } else {
-                $sMySQLServer = '127.0.0.1';
+                $sDatabaseServer = '127.0.0.1';
             }
         }
         
-        $this->cGnuCash = new GnuCash($sMySQLServer, $sDbName, $sUsername, $sPassword);
+        $this->cGnuCash = new GnuCash($sDatabaseServer, $sDbName, $sUsername, $sPassword);
         
         if ($this->cGnuCash->getErrorCode()) {
             $this->aReturn['message'] = "Database connection failed.<br /><b>{$this->cGnuCash->getErrorMessage()}</b>";
             $this->aReturn['error_code'] = $this->cGnuCash->getErrorCode();
             $this->done();
-        } else if (!$this->cGnuCash->getAccounts()) {
+        } else if (!$this->cGnuCash->getAccounts() or isset($this->aData['test_credentials'])) {
             if (isset($this->aData['test_credentials'])) {
                 $this->aReturn['return'] = 1;
                 $this->aReturn['databases'] = $this->cGnuCash->getDatabases();
+                $this->aReturn['database'] = $this->sDatabase;
                 $this->done();
             }
             if (!$sDbName) {
@@ -81,95 +84,25 @@ class Index {
         $this->done();
     }
     
-    private function done() {
+    private function done($sMessage = null) {
+        if ($sMessage) {
+            $this->aReturn['message'] = $sMessage;
+        }
         exit(json_encode($this->aReturn));
     }
     
     private function checkDatabaseLock() {
         $aLock = $this->cGnuCash->isLocked();
         if ($aLock) {
-            $this->aReturn['message'] = "GNUCash database is locked by: {$aLock['Hostname']}";
+            $this->aReturn['message'] = "GnuCash database is locked by: {$aLock['Hostname']}";
             $this->done();
         }
     }
     
     private function appCheckSettings() {
-        if (!in_array($this->aData['version'], [$this->sVersion, $this->sLastVersion])) {
-            $this->aReturn['return'] = 2;
-            $this->aReturn['script_version'] = $this->sVersion;
-            $this->aReturn['app_version'] = $this->aData['version'];
-            $this->aReturn['message'] = 'Version mismatch.';
-            $this->done();
-        }
         $this->aReturn['return'] = 1;
+        $this->aReturn['version'] = $this->sVersion;
         $this->aReturn['message'] = 'Settings verified.';
-    }
-    
-    private function appGetDateTimeSelect() {
-        // TODO: Remove after 1.7.0 expires.
-        $this->aReturn['return'] = 1;
-        
-        $aMonths = array('', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
-        if (!$this->aData['month']) { $this->aData['month'] = date('n'); }
-        if (!$this->aData['year']) { $this->aData['year'] = date('Y'); }
-        
-        $iPreviousYear = $this->aData['year'];
-        $iNextYear = $this->aData['year'];
-        $iPreviousMonth = $this->aData['month'] - 1;
-        $iNextMonth = $this->aData['month'] + 1;
-         
-        if ($iPreviousMonth == 0 ) {
-            $iPreviousMonth = 12;
-            $iPreviousYear = $this->aData['year'] - 1;
-        }
-        if ($iNextMonth == 13 ) {
-            $iNextMonth = 1;
-            $iNextYear = $this->aData['year'] + 1;
-        }
-        
-        $this->aReturn['html'] = '
-        <table style="width: 100%;">
-            <thead>
-                <tr>
-                    <th align="left" style="padding: 5px; vertical-align: middle;" id="btnPreviousMonth"><i class="large angle left icon"></i></th>
-                    <th colspan="5" align="middle" style="padding: 5px; vertical-align: middle;">' . $aMonths[$this->aData['month']] . ' ' . $this->aData['year'] . '</th>
-                    <th align="right" style="padding: 5px; vertical-align: middle;" id="btnNextMonth"><i class="large angle right icon"></i></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td align="middle" style="padding: 5px;"><b>S</b></td>
-                    <td align="middle" style="padding: 5px;"><b>M</b></td>
-                    <td align="middle" style="padding: 5px;"><b>T</b></td>
-                    <td align="middle" style="padding: 5px;"><b>W</b></td>
-                    <td align="middle" style="padding: 5px;"><b>T</b></td>
-                    <td align="middle" style="padding: 5px;"><b>F</b></td>
-                    <td align="middle" style="padding: 5px;"><b>S</b></td>
-                </tr>';
-
-        $iTimestamp = mktime(0, 0, 0, $this->aData['month'], 1, $this->aData['year']);
-        $sMaxday = date('t', $iTimestamp);
-        $aThisMonth = getdate($iTimestamp);
-        $iStartday = $aThisMonth['wday'];
-        for ($i = 0; $i < ($sMaxday + $iStartday); $i++) {
-            $iDay = $i - $iStartday + 1;
-            if (($i % 7) == 0 ) {
-                $this->aReturn['html'] .= '<tr>';
-            }
-            if ($i < $iStartday) {
-                $this->aReturn['html'] .= '<td>&nbsp;</td>';
-            } else {
-                $this->aReturn['html'] .= '<td align="middle" style="padding: 7px;' . (strtotime($this->aData['month'] . '/' . $iDay . '/' . $this->aData['year']) == strtotime(date('n/j/Y'))  ? ' outline: 1px solid white;' : '') . '" class="date" data-date="' . $this->aData['month'] . '/' . $iDay . '/' . $this->aData['year'] . '">'. $iDay . '</td>';
-            }
-            if (($i % 7) == 6 ) {
-                $this->aReturn['html'] .= '</tr>';
-            }
-        }
-        
-        $this->aReturn['html'] .= '
-            </tbody>
-        </table>
-        ';
     }
     
     private function appFetchAccounts() {
@@ -178,42 +111,24 @@ class Index {
         
         $aAccounts = $this->cGnuCash->getAccounts();
         foreach ($aAccounts as $aAccount) {
-            $sPrefix = $aAccount['account_type'] . ': ';
-            if (strpos($sPrefix, 'INCOME') !== false) {
-                $sPrefix = 'Income: ';
-            } else if (strpos($sPrefix, 'EXPENSE') !== false) {
-                $sPrefix = 'Expenses: ';
-            } else if (strpos($sPrefix, 'BANK') !== false) {
-                $sPrefix = 'Bank: ';
-            } else if (strpos($sPrefix, 'ROOT') !== false) {
-                $sPrefix = 'Root: ';
-            } else if (strpos($sPrefix, 'PAYABLE') !== false) {
-                $sPrefix = 'A/P: ';
-            } else if (strpos($sPrefix, 'RECEIVABLE') !== false) {
-                $sPrefix = 'A/R: ';
-            } else if (strpos($sPrefix, 'CREDIT') !== false) {
-                $sPrefix = 'Card: ';
-            } else if (strpos($sPrefix, 'ASSET') !== false) {
-                $sPrefix = 'Asset: ';
-            } else if (strpos($sPrefix, 'EQUITY') !== false) {
-                $sPrefix = 'Equity: ';
-            } else if (strpos($sPrefix, 'LIABILITY') !== false) {
-                $sPrefix = 'Liability: ';
-            } else if (strpos($sPrefix, 'CASH') !== false) {
-                $sPrefix = 'Cash: ';
+            if ($aAccount['parent_guid']) {
+                $aParent = $this->cGnuCash->getAccountInfo($aAccount['parent_guid']);
+                if ($aParent['name'] == 'Template Root') {
+                    continue;
+                }
+                $this->aReturn['accounts'][] = array(
+                    'name' => $aParent['name'] . ':' . $aAccount['name'],
+                    'simple_name' => $aAccount['name'],
+                    'count' => $aAccount['Count'],
+                    'guid' => $aAccount['guid'],
+                    'is_parent' => (count($this->cGnuCash->getChildAccounts($aAccount['guid'])) > 0) * 1
+                );
             }
-            $this->aReturn['accounts'][] = array(
-                'name' => "$sPrefix{$aAccount['name']}",
-                'simple_name' => $aAccount['name'],
-                'count' => $aAccount['Count'],
-                'guid' => $aAccount['guid'],
-                'is_parent' => (count($this->cGnuCash->getChildAccounts($aAccount['guid'])) > 0) * 1
-            );
         }
     }
     
     private function appGetAccountDescriptions() {
-        $sAccountGUID = $this->aData['accountGUID'];
+        $sAccountGUID = $this->aData['account_guid'];
         $aTransactions = $this->cGnuCash->getAccountTransactions($sAccountGUID);
         
         $this->aReturn['return'] = 1;
@@ -297,7 +212,7 @@ class Index {
                     array(
                         'guid' => $aTransaction['tx_guid'],
                         'description' => $aTransaction['description'],
-                        'amount' => number_format(($aTransaction['value_num'] / $aTransaction['value_denom']), 2),
+                        'amount' => number_format(round(($aTransaction['value_num'] / $aTransaction['value_denom']), 2), 2),
                         'memo' => $aTransaction['memo'],
                         'date' => date('m-d-y', strtotime($aDate[0])),
                         'reconciled' => $aTransaction['reconcile_state'] == 'c'
@@ -314,7 +229,7 @@ class Index {
         
         $bSet = $this->cGnuCash->setReconciledStatus($sTransactionGUID, $bReconciled);
         
-        $this->aReturn['message'] = $bReconciled;
+        $this->aReturn['reconciled'] = !$bReconciled * 1;
         
         if ($bSet) {
             $this->aReturn['return'] = 1;
@@ -453,7 +368,7 @@ class GnuCash {
     public function __construct($sHostname, $sDbName, $sUsername, $sPassword) {
         $this->sDbName = $sDbName;
         try {
-            $this->con = new PDO("mysql:host=$sHostname;dbname=$sDbName", $sUsername, $sPassword);
+            $this->con = new PDO("mysql:host=$sHostname;dbname=$sDbName;charset=utf8", $sUsername, $sPassword);//, [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8']);
             $this->con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch(PDOException $e) {
             $this->eException = $e;
@@ -534,6 +449,7 @@ class GnuCash {
                                         GROUP BY `account_guid`
                                     ) counts
                                     ON `counts`.`account_guid` = `accounts`.`guid`
+                                    WHERE `hidden` = 0
                                 ORDER BY Count DESC;");
     }
     
@@ -688,7 +604,7 @@ class GnuCash {
     }
     
     public function getChildAccounts($sParentGUID) {
-        return $this->runQuery("SELECT * FROM `accounts` WHERE `parent_guid` = :parent_guid;",
+        return $this->runQuery("SELECT * FROM `accounts` WHERE `parent_guid` = :parent_guid and `hidden` = 0;",
                                array(':parent_guid' => $sParentGUID));
     }
     
@@ -794,4 +710,3 @@ class GnuCash {
 new Index();
 
 ?>
-
